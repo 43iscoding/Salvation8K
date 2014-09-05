@@ -1,3 +1,6 @@
+window.WIDTH = 1136;
+window.HEIGHT = 640;
+
 var GameState = function(game) {};
 
 GameState.prototype.preload = function() {
@@ -18,6 +21,8 @@ var PLANET_TYPES = 12;
 
 GameState.prototype.create = function() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
+    //init background
+    initBackground();
     //init planets
     planetPool = initPlanetPool();
     planets = game.add.group();
@@ -25,6 +30,31 @@ GameState.prototype.create = function() {
     createPlanet(50, 50);
     createPlanet(200, 200);
 };
+
+function initBackground() {
+    game.stage.backgroundColor = 'black';
+    var background = game.add.bitmapData(WIDTH, HEIGHT);
+    background.ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    var stars = [];
+    for (var i = 0; i < WIDTH; i++) {
+        stars.push({x : i,  y : game.rnd.integerInRange(0, HEIGHT), color : getRandomStarColor()});
+    }
+    stars.forEach(function(star) {
+        background.ctx.fillStyle = star.color;
+        background.ctx.fillRect(star.x, star.y, 1, 1);
+    });
+
+    var bgSprite = game.add.sprite(0, 0, background);
+    bgSprite.inputEnabled = true;
+    bgSprite.events.onInputDown.add(onSpaceClick);
+}
+
+
+function getRandomStarColor() {
+    //its greyscale from #111111 to #AAAAAA
+    var value = 1118481 * game.rnd.integerInRange(0, 10);
+    return '#' + value.toString(16);
+}
 
 function initPlanetPool() {
     var names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
@@ -58,12 +88,20 @@ function createPlanet(x, y) {
 
 var selected = null;
 
+function onSpaceClick(bg, pointer) {
+    deselectAll();
+    selected = null;
+}
 function onPlanetClick(planet, pointer) {
+    deselectAll();
+    planet.overlay.animations.play('selected');
+    selected = planet;
+}
+
+function deselectAll() {
     planets.forEach(function(planet) {
         planet.overlay.animations.play('idle');
     }, this);
-    planet.overlay.animations.play('selected');
-    selected = planet;
 }
 
 function onPlanetHover(planet, pointer) {
@@ -84,7 +122,7 @@ GameState.prototype.render = function() {
     game.debug.text('Selected: ' + (selected != null ? selected.name : 'None'), 500, 50);
 };
 
-var game = new Phaser.Game(1136, 640, Phaser.AUTO, 'game');
+var game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, 'game');
 game.state.add('game', GameState, true);
 
 window.game = game;
