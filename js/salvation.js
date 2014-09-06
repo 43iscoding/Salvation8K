@@ -29,8 +29,8 @@ GameState.prototype.create = function() {
     planetPool = initPlanetPool();
     planets = game.add.group();
     selected = null;
-    createPlanet(200, 200, {population : 200, range : 80});
-    createPlanet(400, 300, {population : 100, range : 100});
+    createPlanet(200, 200, {population : 200, range : 250});
+    createPlanet(400, 300, {population : 100, range : 300});
     portal = createPortal(600, 100);
 };
 
@@ -119,9 +119,14 @@ function createOverlay(x, y, portal) {
 }
 
 function createRangeOverlay(x, y, range) {
-    var bmd = game.add.bitmapData(x + range, y + range);
-    bmd.ctx.strokeStyle = 'rgba(200,200,200,0.3)';
-    bmd.circle(x, y, range, 'rgba(255,255,255,0.1)');
+    var bmd = game.add.bitmapData(x + range + 2, y + range + 2);
+    bmd.ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    bmd.ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    bmd.ctx.beginPath();
+    bmd.ctx.arc(x, y, range, 0, Math.PI*2, true);
+    bmd.ctx.closePath();
+    bmd.ctx.stroke();
+    bmd.ctx.fill();
     var overlay = game.add.sprite(0, 0, bmd);
     overlay.visible = false;
     return overlay;
@@ -154,12 +159,14 @@ function deselectAll() {
 function onPlanetHover(planet, pointer) {
     if (planet == selected) return;
     planet.overlay.visible = true;
+    if (planet != portal) planet.rangeOverlay.visible = true;
     planet.overlay.animations.play('hover');
 }
 
 function onPlanetOut(planet, pointer) {
     if (planet == selected) return;
     planet.overlay.visible = false;
+    if (planet != portal) planet.rangeOverlay.visible = false;
 }
 
 GameState.prototype.update = function() {
