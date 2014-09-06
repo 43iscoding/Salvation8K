@@ -29,15 +29,14 @@ GameState.prototype.create = function() {
     planetPool = initPlanetPool();
     planets = game.add.group();
     selected = null;
-    createPlanet(50, 50);
-    createPlanet(200, 200);
-    portal = createPortal(400, 100);
+    createPlanet(200, 200, {population : 200, range : 80});
+    createPlanet(400, 300, {population : 100, range : 100});
+    portal = createPortal(600, 100);
 };
 
 function initBackground() {
     game.stage.backgroundColor = 'black';
     var background = game.add.bitmapData(WIDTH, HEIGHT);
-    background.ctx.clearRect(0, 0, WIDTH, HEIGHT);
     var stars = [];
     for (var i = 0; i < WIDTH; i++) {
         stars.push({x : i,  y : game.rnd.integerInRange(0, HEIGHT), color : getRandomStarColor()});
@@ -69,7 +68,7 @@ function initPlanetPool() {
     return Phaser.Utils.shuffle(pool);
 }
 
-function createPlanet(x, y) {
+function createPlanet(x, y, config) {
     var planet = planets.create(x, y, 'planets');
     var info = planetPool.pop();
     planet.name = info.name;
@@ -80,12 +79,15 @@ function createPlanet(x, y) {
     planet.events.onInputOver.add(onPlanetHover);
     planet.events.onInputOut.add(onPlanetOut);
     planet.anchor.setTo(0.5);
-    var overlay = game.add.sprite(x, y, 'overlays');
-    overlay.animations.add('hover', [4], 10, true);
-    overlay.animations.add('selected', [5], 10, true);
-    overlay.visible = false;
-    overlay.anchor.setTo(0.5);
-    planet.overlay = overlay;
+
+    planet.overlay = createOverlay(x, y, false);
+    planet.overlay.animations.add('dying', [0,1,2,3], 10, false);
+
+    planet.rangeOverlay = createRangeOverlay(x, y, config.range);
+
+    planet.population = config.population;
+    planet.range = config.range;
+
     return planet;
 }
 
@@ -99,14 +101,30 @@ function createPortal(x, y) {
     portal.events.onInputOver.add(onPlanetHover);
     portal.events.onInputOut.add(onPlanetOut);
     portal.anchor.setTo(0.5);
+
+    portal.overlay = createOverlay(x, y, true);
+
+    portal.population = 0;
+
+    return portal;
+}
+
+function createOverlay(x, y, portal) {
     var overlay = game.add.sprite(x, y, 'overlays');
-    overlay.animations.add('dying', [0,1,2,3], 10, false);
-    overlay.animations.add('hover', [6], 10, true);
-    overlay.animations.add('selected', [7], 10, true);
+    overlay.animations.add('hover', [portal ? 6 : 4], 10, true);
+    overlay.animations.add('selected', [portal ? 7 : 5], 10, true);
     overlay.visible = false;
     overlay.anchor.setTo(0.5);
-    portal.overlay = overlay;
-    return portal;
+    return overlay;
+}
+
+function createRangeOverlay(x, y, range) {
+    var bmd = game.add.bitmapData(x + range, y + range);
+    bmd.ctx.strokeStyle = 'rgba(200,200,200,0.3)';
+    bmd.circle(x, y, range, 'rgba(255,255,255,0.1)');
+    var overlay = game.add.sprite(0, 0, bmd);
+    overlay.visible = false;
+    return overlay;
 }
 
 var selected = null;
@@ -114,17 +132,22 @@ var selected = null;
 function onSpaceClick(g, pointer) {
     deselectAll();
     selected = null;
+    //console.log(pointer.x + ":" + pointer.y);
 }
 function onPlanetClick(planet, pointer) {
     deselectAll();
+    if (planet == portal) return;
     planet.overlay.visible = true;
+    planet.rangeOverlay.visible = true;
     planet.overlay.animations.play('selected');
     selected = planet;
 }
 
 function deselectAll() {
     planets.forEach(function(planet) {
+        if (planet == portal) return;
         planet.overlay.visible = false;
+        planet.rangeOverlay.visible = false;
     }, this);
 }
 
@@ -145,8 +168,14 @@ GameState.prototype.update = function() {
 };
 
 GameState.prototype.render = function() {
-    game.debug.text('Selected: ' + (selected != null ? selected.name : 'None'), 500, 50);
+    game.debug.text('Selected: ' + toString(selected), 500, 50);
 };
+
+function toString(planet) {
+    if (planet == null) return 'None';
+
+    return planet.name + "(" + planet.population + ")";
+}
 
 var game = new Phaser.Game(WIDTH, HEIGHT, Phaser.AUTO, 'game');
 game.state.add('game', GameState, true);
