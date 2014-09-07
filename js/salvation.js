@@ -31,6 +31,7 @@ GameState.prototype.create = function() {
     selected = null;
     createPlanet(200, 200, {population : 200, range : 250});
     createPlanet(400, 300, {population : 100, range : 300});
+    createPlanet(300, 400);
     portal = createPortal(600, 100);
 };
 
@@ -69,6 +70,7 @@ function initPlanetPool() {
 }
 
 function createPlanet(x, y, config) {
+    if (config == undefined) config = {};
     var planet = planets.create(x, y, 'planets');
     var info = planetPool.pop();
     planet.name = info.name;
@@ -83,10 +85,10 @@ function createPlanet(x, y, config) {
     planet.overlay = createOverlay(x, y, false);
     planet.overlay.animations.add('dying', [0,1,2,3], 10, false);
 
-    planet.rangeOverlay = createRangeOverlay(x, y, config.range);
+    planet.rangeOverlay = createRangeOverlay(x, y, config.range | 150);
 
-    planet.population = config.population;
-    planet.range = config.range;
+    planet.population = config.population | 100;
+    planet.range = config.range | 150;
 
     return planet;
 }
@@ -139,8 +141,8 @@ function onSpaceClick(g, pointer) {
     //console.log(pointer.x + ":" + pointer.y);
 }
 function onPlanetClick(planet, pointer) {
-    if (planet == portal) return;
     if (selected == null) {
+        if (planet == portal) return;
         planet.overlay.visible = true;
         planet.rangeOverlay.visible = true;
         planet.overlay.animations.play('selected');
@@ -151,6 +153,7 @@ function onPlanetClick(planet, pointer) {
         deselect();
     } else {
         deselect();
+        if (planet == portal) return;
         planet.overlay.visible = true;
         planet.rangeOverlay.visible = true;
         planet.overlay.animations.play('selected');
@@ -165,14 +168,11 @@ function createTunnel(from, to) {
     var bmd = game.add.bitmapData(distance, distance);
     bmd.ctx.strokeStyle = 'white';
     bmd.ctx.beginPath();
-    bmd.ctx.moveTo(0, 0);
-    bmd.ctx.lineTo(sortedTo.x - sortedFrom.x, sortedTo.y - sortedFrom.y);
+    bmd.ctx.moveTo(from.x - sortedFrom.x, from.y - sortedFrom.y);
+    bmd.ctx.lineTo(to.x - sortedFrom.x, to.y - sortedFrom.y);
     bmd.ctx.closePath();
     bmd.ctx.stroke();
     var tunnelSprite = game.add.sprite(sortedFrom.x, sortedFrom.y, bmd);
-    tunnelSprite.inputEnabled = true;
-    tunnelSprite.pixelPerfectClick = true;
-    tunnelSprite.events.onInputDown.add(onTunnelClick);
     tunnelSprite.from = from;
     tunnelSprite.to = to;
     return tunnelSprite;
