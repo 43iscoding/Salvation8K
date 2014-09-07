@@ -135,25 +135,58 @@ function createRangeOverlay(x, y, range) {
 var selected = null;
 
 function onSpaceClick(g, pointer) {
-    deselectAll();
-    selected = null;
+    deselect();
     //console.log(pointer.x + ":" + pointer.y);
 }
 function onPlanetClick(planet, pointer) {
-    deselectAll();
     if (planet == portal) return;
-    planet.overlay.visible = true;
-    planet.rangeOverlay.visible = true;
-    planet.overlay.animations.play('selected');
-    selected = planet;
+    if (selected == null) {
+        planet.overlay.visible = true;
+        planet.rangeOverlay.visible = true;
+        planet.overlay.animations.play('selected');
+        selected = planet;
+    } else if (selected != planet && this.game.physics.arcade.distanceBetween(selected, planet) <= selected.range) {
+        var tunnel = createTunnel(selected, planet);
+        console.log('tunnel ' + tunnel.from.name + " -> " + tunnel.to.name);
+        deselect();
+    } else {
+        deselect();
+        planet.overlay.visible = true;
+        planet.rangeOverlay.visible = true;
+        planet.overlay.animations.play('selected');
+        selected = planet;
+    }
 }
 
-function deselectAll() {
-    planets.forEach(function(planet) {
-        if (planet == portal) return;
-        planet.overlay.visible = false;
-        planet.rangeOverlay.visible = false;
-    }, this);
+function createTunnel(from, to) {
+    var sortedFrom = {x : from.x < to.x ? from.x : to.x, y : from.y < to.y ? from.y : to.y};
+    var sortedTo = {x : from.x > to.x ? from.x : to.x, y : from.y > to.y ? from.y : to.y};
+    var distance = this.game.physics.arcade.distanceBetween(from, to);
+    var bmd = game.add.bitmapData(distance, distance);
+    bmd.ctx.strokeStyle = 'white';
+    bmd.ctx.beginPath();
+    bmd.ctx.moveTo(0, 0);
+    bmd.ctx.lineTo(sortedTo.x - sortedFrom.x, sortedTo.y - sortedFrom.y);
+    bmd.ctx.closePath();
+    bmd.ctx.stroke();
+    var tunnelSprite = game.add.sprite(sortedFrom.x, sortedFrom.y, bmd);
+    tunnelSprite.inputEnabled = true;
+    tunnelSprite.pixelPerfectClick = true;
+    tunnelSprite.events.onInputDown.add(onTunnelClick);
+    tunnelSprite.from = from;
+    tunnelSprite.to = to;
+    return tunnelSprite;
+}
+
+function onTunnelClick(tunnel, pointer) {
+    tunnel.kill();
+}
+
+function deselect() {
+    if (selected == null) return;
+    selected.overlay.visible = false;
+    selected.rangeOverlay.visible = false;
+    selected = null;
 }
 
 function onPlanetHover(planet, pointer) {
