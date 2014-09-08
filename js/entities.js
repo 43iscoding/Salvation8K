@@ -46,6 +46,9 @@ function Planet(x, y, config) {
 }
 
 Planet.prototype.constructor = Planet;
+Planet.prototype.update = function() {
+    this.populationText.setText(this.population);
+};
 
 /******************************************
                     Portal
@@ -68,22 +71,55 @@ function Portal(x, y) {
     this.overlay = createOverlay(x, y, true);
 
     this.population = 0;
+
+    this.populationText = game.add.text(x + textOffset.x, y + textOffset.y, this.population, { font : '15px Arial', fill: '#ccc', align: 'center'});
 }
 
 Portal.prototype.constructor = Portal;
 Portal.prototype.update = function() {
     this.planet.rotation += 0.01;
     this.overlay.rotation += 0.01;
+    this.populationText.setText(this.population);
 };
 
+/******************************************
+                   Tunnel
+ ******************************************/
 
+function Tunnel(from, to) {
+    var sortedFrom = {x : from.x < to.x ? from.x : to.x, y : from.y < to.y ? from.y : to.y};
+    var distance = game.physics.arcade.distanceBetween(from, to);
+    var bmd = game.add.bitmapData(distance, distance);
+    bmd.ctx.strokeStyle = 'white';
+    bmd.ctx.beginPath();
+    bmd.ctx.moveTo(from.x - sortedFrom.x, from.y - sortedFrom.y);
+    bmd.ctx.lineTo(to.x - sortedFrom.x, to.y - sortedFrom.y);
+    bmd.ctx.closePath();
+    bmd.ctx.stroke();
+    this.tunnel = game.add.sprite(sortedFrom.x, sortedFrom.y, bmd);
+    this.tunnel.tunnel = this;
+    this.from = from;
+    this.to = to;
 
+    this.tunnelRate = 2;
+    this.counter = 0;
+}
+Tunnel.prototype.constructor = Tunnel;
+Tunnel.prototype.kill = function() {
+    this.tunnel.kill();
+};
+Tunnel.prototype.update = function() {
+    if (this.counter++ % this.tunnelRate) return;
 
+    if (this.from.population > 0) {
+        this.from.population--;
+        this.to.population++;
+    }
+};
 
-
-
-
-
+/******************************************
+              Helper functions
+ ******************************************/
 
 function createOverlay(x, y, portal) {
     var overlay = game.add.sprite(x, y, 'overlays');

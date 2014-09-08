@@ -123,20 +123,7 @@ function deleteTunnel(from, to) {
 }
 
 function createTunnel(from, to) {
-    var sortedFrom = {x : from.x < to.x ? from.x : to.x, y : from.y < to.y ? from.y : to.y};
-    var distance = this.game.physics.arcade.distanceBetween(from, to);
-    var bmd = game.add.bitmapData(distance, distance);
-    bmd.ctx.strokeStyle = 'white';
-    bmd.ctx.beginPath();
-    bmd.ctx.moveTo(from.x - sortedFrom.x, from.y - sortedFrom.y);
-    bmd.ctx.lineTo(to.x - sortedFrom.x, to.y - sortedFrom.y);
-    bmd.ctx.closePath();
-    bmd.ctx.stroke();
-    var tunnelSprite = game.add.sprite(sortedFrom.x, sortedFrom.y, bmd);
-    tunnelSprite.from = from;
-    tunnelSprite.to = to;
-    console.log(from.name + " -> " + to.name);
-    tunnels.push(tunnelSprite);
+    tunnels.push(new Tunnel(from, to));
 }
 
 function onTunnelClick(tunnel, pointer) {
@@ -167,6 +154,14 @@ function onPlanetOut(planetSprite, pointer) {
 
 GameState.prototype.update = function() {
     portal.update();
+
+    tunnels.forEach(function(tunnel) {
+        tunnel.update();
+    });
+
+    planets.forEach(function(planet) {
+        planet.update();
+    });
 };
 
 GameState.prototype.render = function() {
