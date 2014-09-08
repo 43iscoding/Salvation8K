@@ -1,4 +1,29 @@
-.menus/UI
-.levels
-.noise
-.selected line
+.menus/UI {
+    .selection line
+    .population bar
+    .level selection menu
+    .after level menu (victory/defeat)
+    .flavour text/hints
+    .level number
+}
+.levels {
+    .1-7 basic
+    .up to 30
+    .mechanics - Moons
+}
+.noise {
+    .losing
+    .planets not able to transfer
+    .planet SFX
+    .visual
+}
+.visual {
+    .tunnels visual
+    .more planets
+    .reword planets
+    .rework BG (size, black -> dark blue, nebulas)
+}
+.sound {
+    .basic sounds + rework
+    .music
+}
