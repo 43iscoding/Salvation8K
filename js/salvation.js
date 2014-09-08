@@ -1,6 +1,8 @@
 window.WIDTH = 1136;
 window.HEIGHT = 640;
 
+window.SAVE_THRESH = 0.75;
+
 var GameState = function(game) {};
 
 GameState.prototype.preload = function() {
@@ -20,6 +22,10 @@ var tunnels;
 
 var PLANET_TYPES = 12;
 
+var state = null;
+
+window.state = state;
+
 GameState.prototype.create = function() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
     //init background
@@ -28,12 +34,36 @@ GameState.prototype.create = function() {
     planets = [];
     tunnels = [];
     selected = null;
+    createState();
     initPlanetPool();
     createPlanet(200, 200, {population : 200, range : 250});
     createPlanet(400, 300, {population : 100, range : 300});
     createPlanet(300, 400);
     createPortal(600, 100);
 };
+
+function createState() {
+    window.state = state = {
+        thresh : SAVE_THRESH,
+        total : 0,
+        lost : 0,
+        saved : function() {
+            return portal.population;
+        },
+        weLost : function() {
+            return this.lost >= this.total * (1 - this.thresh);
+        },
+        weWon : function() {
+            return this.total - 1 < this.saved() + this.lost && this.weAreWinning();
+        },
+        weAreWinning : function() {
+            return this.saved() > this.total * this.thresh;
+        },
+        perfect : function() {
+            return this.total - 1 < this.saved();
+        }
+    }
+}
 
 function initBackground() {
     game.stage.backgroundColor = 'black';
@@ -60,7 +90,9 @@ function getRandomStarColor() {
 }
 
 function createPlanet(x, y, config) {
-    planets.push(new Planet(x, y, config));
+    var planet = new Planet(x, y, config);
+    planets.push(planet);
+    state.total += planet.population;
 }
 
 function createPortal(x, y) {
@@ -179,9 +211,21 @@ GameState.prototype.update = function() {
 };
 
 GameState.prototype.render = function() {
-    game.debug.text('Selected: ' + toString(selected), 930, 30);
+    game.debug.text('Selected: ' + toString(selected), 950, 30);
     game.debug.text('Planets: ' + planets.length, 950, 50);
     game.debug.text('Tunnels: ' + tunnels.length, 950, 70);
+    game.debug.text('Status: ' + state.saved() + '/' + state.lost + '/' + state.total, 950, 90);
+    if (state.weWon()) {
+        if (state.perfect()) {
+            game.debug.text('PERFECT', 950, 110);
+        } else {
+            game.debug.text('VICTORY', 950, 110);
+        }
+    } else if (state.weLost()) {
+        game.debug.text('DEFEAT', 950, 110);
+    } else if (state.weAreWinning()) {
+        game.debug.text('RELAX', 950, 110);
+    }
 };
 
 function toString(planet) {
