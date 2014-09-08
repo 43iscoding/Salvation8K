@@ -21,8 +21,10 @@ function Planet(x, y, config) {
     this.y = y;
 
     if (config == undefined || config == null) config = {};
-    this.population = config.population | 100;
-    this.range = config.range | 150;
+    this.population = config.population != null ? config.population : 100;
+    this.range = config.range != null ? config.range : 150;
+    this.escapeRate = config.escapeRate != null ? config.escapeRate : 1;
+    this.maxPopulation = config.maxPopulation != null ? config.maxPopulation : 9999;
 
     var info = planetPool.pop();
     this.name = info.name;
@@ -48,6 +50,39 @@ function Planet(x, y, config) {
 Planet.prototype.constructor = Planet;
 Planet.prototype.update = function() {
     this.populationText.setText(this.population);
+};
+Planet.prototype.busySending = function() {
+    var tunnel = getTunnelFrom(this);
+    return tunnel != null && tunnel.active;
+};
+Planet.prototype.busyReceiving = function() {
+    var tunnels = getTunnelsTo(this);
+    for (var i = 0; i < tunnels.length; i++) {
+        if (tunnels[i].active) return true;
+    }
+    return false;
+};
+Planet.prototype.decPopulation = function() {
+    if (this.population == 0) return 0;
+
+    if (this.population < this.escapeRate) {
+        var result = this.population;
+        this.population = 0;
+        return result;
+    }
+
+    this.population -= this.escapeRate;
+
+    return this.escapeRate;
+};
+Planet.prototype.incPopulation = function(delta) {
+    var result = 0;
+    this.population += delta;
+    if (this.population > this.maxPopulation) {
+        result = this.population - this.maxPopulation;
+        this.population = this.maxPopulation;
+    }
+    return result;
 };
 
 /******************************************
@@ -75,6 +110,7 @@ function Portal(x, y) {
     this.populationText = game.add.text(x + textOffset.x, y + textOffset.y, this.population, { font : '15px Arial', fill: '#ccc', align: 'center'});
 }
 
+Portal.prototype = Object.create(Planet.prototype);
 Portal.prototype.constructor = Portal;
 Portal.prototype.update = function() {
     this.planet.rotation += 0.01;
@@ -103,17 +139,31 @@ function Tunnel(from, to) {
 
     this.tunnelRate = 2;
     this.counter = 0;
+    this.active = false;
 }
 Tunnel.prototype.constructor = Tunnel;
 Tunnel.prototype.kill = function() {
     this.tunnel.kill();
 };
 Tunnel.prototype.update = function() {
-    if (this.counter++ % this.tunnelRate) return;
+    //if (this.counter++ % this.tunnelRate) return;
 
-    if (this.from.population > 0) {
-        this.from.population--;
-        this.to.population++;
+    if (this.to.busySending() || this.from.busyReceiving()) {
+        this.active = false;
+        return;
+    }
+
+    var value = this.from.decPopulation();
+    if (value > 0) {
+        value = this.to.incPopulation(value);
+        if (value > 0) {
+            this.from.incPopulation(value);
+            this.active = false;
+        } else {
+            this.active = true;
+        }
+    } else {
+        this.active = false;
     }
 };
 

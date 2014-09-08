@@ -1,3 +1,4 @@
-.tunnels -> display/logic
 .menus/UI
 .levels
+.noise
+.selected line

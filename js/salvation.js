@@ -76,12 +76,26 @@ function onSpaceClick(g, pointer) {
 
 function tunnelExists(from, to) {
     for (var i = 0; i < tunnels.length; i++) {
-        var tunnel = tunnels[i];
-        if (tunnel.from == from && tunnel.to == to) {
+        if (tunnels[i].from == from && tunnels[i].to == to) {
             return true;
         }
     }
     return false;
+}
+
+function getTunnelFrom(planet) {
+    for (var i = 0; i < tunnels.length; i++) {
+        if (tunnels[i].from == planet) return tunnels[i];
+    }
+    return null;
+}
+
+function getTunnelsTo(planet) {
+    var tunnelsTo = [];
+    tunnels.forEach(function(tunnel) {
+        if (tunnel.to == planet) tunnelsTo.push(tunnel);
+    });
+    return tunnelsTo;
 }
 
 function onPlanetClick(planetSprite, pointer) {
