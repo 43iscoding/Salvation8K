@@ -29,15 +29,15 @@ function Planet(x, y, config) {
     var info = planetPool.pop();
     this.name = info.name;
 
-    this.planet = game.add.sprite(x, y, 'planets');
-    this.planet.planet = this;
-    this.planet.animations.add('idle', [info.sprite], 10, true);
-    this.planet.animations.play('idle');
-    this.planet.inputEnabled = true;
-    this.planet.events.onInputDown.add(onPlanetClick);
-    this.planet.events.onInputOver.add(onPlanetHover);
-    this.planet.events.onInputOut.add(onPlanetOut);
-    this.planet.anchor.setTo(0.5);
+    this.sprite = game.add.sprite(x, y, 'planets');
+    this.sprite.planet = this;
+    this.sprite.animations.add('idle', [info.sprite], 10, true);
+    this.sprite.animations.play('idle');
+    this.sprite.inputEnabled = true;
+    this.sprite.events.onInputDown.add(onPlanetClick);
+    this.sprite.events.onInputOver.add(onPlanetHover);
+    this.sprite.events.onInputOut.add(onPlanetOut);
+    this.sprite.anchor.setTo(0.5);
 
     this.overlay = createOverlay(x, y, false);
     this.overlay.animations.add('dying', [0,1,2,3], 10, false);
@@ -92,16 +92,16 @@ Planet.prototype.incPopulation = function(delta) {
 function Portal(x, y) {
     this.x = x;
     this.y = y;
-    this.planet = game.add.sprite(x, y, 'planets');
-    this.planet.planet = this;
+    this.sprite = game.add.sprite(x, y, 'planets');
+    this.sprite.planet = this;
     this.name = 'Wormhole';
-    this.planet.animations.add('idle', [16], 10, true);
-    this.planet.animations.play('idle');
-    this.planet.inputEnabled = true;
-    this.planet.events.onInputDown.add(onPlanetClick);
-    this.planet.events.onInputOver.add(onPlanetHover);
-    this.planet.events.onInputOut.add(onPlanetOut);
-    this.planet.anchor.setTo(0.5);
+    this.sprite.animations.add('idle', [16], 10, true);
+    this.sprite.animations.play('idle');
+    this.sprite.inputEnabled = true;
+    this.sprite.events.onInputDown.add(onPlanetClick);
+    this.sprite.events.onInputOver.add(onPlanetHover);
+    this.sprite.events.onInputOut.add(onPlanetOut);
+    this.sprite.anchor.setTo(0.5);
 
     this.overlay = createOverlay(x, y, true);
 
@@ -113,7 +113,7 @@ function Portal(x, y) {
 Portal.prototype = Object.create(Planet.prototype);
 Portal.prototype.constructor = Portal;
 Portal.prototype.update = function() {
-    this.planet.rotation += 0.01;
+    this.sprite.rotation += 0.01;
     this.overlay.rotation += 0.01;
     this.populationText.setText(this.population);
 };
@@ -127,13 +127,14 @@ function Tunnel(from, to) {
     var distance = game.physics.arcade.distanceBetween(from, to);
     var bmd = game.add.bitmapData(distance, distance);
     bmd.ctx.strokeStyle = 'white';
+    bmd.ctx.lineWidth = 2;
     bmd.ctx.beginPath();
     bmd.ctx.moveTo(from.x - sortedFrom.x, from.y - sortedFrom.y);
     bmd.ctx.lineTo(to.x - sortedFrom.x, to.y - sortedFrom.y);
     bmd.ctx.closePath();
     bmd.ctx.stroke();
-    this.tunnel = game.add.sprite(sortedFrom.x, sortedFrom.y, bmd);
-    this.tunnel.tunnel = this;
+    this.sprite = game.add.sprite(sortedFrom.x, sortedFrom.y, bmd);
+    this.sprite.tunnel = this;
     this.from = from;
     this.to = to;
 

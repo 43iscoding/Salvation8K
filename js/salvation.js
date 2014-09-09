@@ -24,11 +24,14 @@ var PLANET_TYPES = 12;
 
 var state = null;
 
+var LAYERS;
+
 window.state = state;
 
 GameState.prototype.create = function() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
     //init background
+    initLayers();
     initBackground();
     //init planets
     planets = [];
@@ -65,6 +68,23 @@ function createState() {
     }
 }
 
+function initLayers() {
+    var bg = game.add.group();
+    bg.z = 0;
+    var tunnels = game.add.group();
+    tunnels.z = 1;
+    var planets = game.add.group();
+    planets.z = 2;
+    var noise = game.add.group();
+    noise.z = 3;
+    LAYERS = {
+        BACKGROUND : bg,
+        TUNNELS : tunnels,
+        PLANETS : planets,
+        NOISE : noise
+    }
+}
+
 function initBackground() {
     game.stage.backgroundColor = 'black';
     var background = game.add.bitmapData(WIDTH, HEIGHT);
@@ -80,6 +100,7 @@ function initBackground() {
     var bgSprite = game.add.sprite(0, 0, background);
     bgSprite.inputEnabled = true;
     bgSprite.events.onInputDown.add(onSpaceClick);
+    LAYERS.BACKGROUND.add(bgSprite);
 }
 
 
@@ -92,11 +113,13 @@ function getRandomStarColor() {
 function createPlanet(x, y, config) {
     var planet = new Planet(x, y, config);
     planets.push(planet);
+    LAYERS.PLANETS.add(planet.sprite);
     state.total += planet.population;
 }
 
 function createPortal(x, y) {
     portal = new Portal(x, y);
+    LAYERS.PLANETS.add(portal.sprite);
 }
 
 var selected = null;
@@ -169,7 +192,9 @@ function deleteTunnel(from, to) {
 }
 
 function createTunnel(from, to) {
-    tunnels.push(new Tunnel(from, to));
+    var tunnel = new Tunnel(from, to);
+    tunnels.push(tunnel);
+    LAYERS.TUNNELS.add(tunnel.sprite);
 }
 
 function onTunnelClick(tunnel, pointer) {
@@ -210,7 +235,42 @@ GameState.prototype.update = function() {
     });
 };
 
+var selectionLine = {
+    bmd : null,
+    clear : function() {
+        if (this.bmd == null) return;
+        this.bmd.clear();
+    },
+    init : function() {
+        this.bmd = game.add.bitmapData(WIDTH, HEIGHT);
+        this.bmd.ctx.strokeStyle = '#cccccc';
+        game.add.sprite(0, 0, this.bmd);
+    },
+    draw : function() {
+        this.bmd.clear();
+        this.bmd.ctx.beginPath();
+        this.bmd.ctx.beginPath();
+        this.bmd.ctx.moveTo(selected.x, selected.y);
+        this.bmd.ctx.lineTo(game.input.x , game.input.y);
+        this.bmd.ctx.lineWidth = 2;
+        this.bmd.ctx.stroke();
+        this.bmd.ctx.closePath();
+        this.bmd.render();
+        this.bmd.refreshBuffer();
+    }
+};
+
 GameState.prototype.render = function() {
+    //selection line
+    selectionLine.clear();
+    if (selected != null) {
+        if (selectionLine.bmd == null) {
+            selectionLine.init();
+        }
+        selectionLine.draw();
+    }
+
+    //debug text
     game.debug.text('Selected: ' + toString(selected), 950, 30);
     game.debug.text('Planets: ' + planets.length, 950, 50);
     game.debug.text('Tunnels: ' + tunnels.length, 950, 70);

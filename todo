@@ -1,5 +1,4 @@
 .menus/UI {
-    .selection line
     .population bar
     .level selection menu
     .after level menu (victory/defeat)
